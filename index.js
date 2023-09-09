@@ -223,9 +223,12 @@ function readFile() {
 
           const promise = audioContext.decodeAudioData(audioData, 
               function(buffer) {
-                for (let oscillator of oscillatorNodes) {
+                for (let i=0; i < oscillatorNodes.length; i++) {
+                  oscillator = oscillatorNodes[i];
                   oscillator.buffer = buffer;
                   oscillator.loop = true;
+                  // c#5 is the start note -- 73 in midi
+                  oscillator.playbackRate.value = 2**((i-73)/12);
                 }
               });
 
