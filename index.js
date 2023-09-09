@@ -1,7 +1,9 @@
 const audioContext = new AudioContext();
 const canvas = byId("tap-area");
 const fileInput = byId("fileInput");
+const soundInput = byId("soundInput");
 const gainNodes = [];
+const oscillatorNodes = [];
 const library = byId("library");
 const normalGain = 0.15; 
 const reader = new FileReader();
@@ -196,13 +198,13 @@ function start() {
           for (let i = 0; i < 128; i++) {
             const freq = tuning.frequency * 2**((i - tuningMidiNumber) / 12);
           
-            const oscillator = new OscillatorNode(audioContext, 
-              {frequency: freq});
+            const oscillator = audioContext.createBufferSource();
             const gainNode = new GainNode(audioContext, {gain: 0});
           
             oscillator.connect(gainNode).connect(audioContext.destination);
             oscillator.start();
 
+            oscillatorNodes.push(oscillator);
             gainNodes.push(gainNode);
           }
 
@@ -212,6 +214,35 @@ function start() {
         document.activeElement.blur();
     });
 }
+
+function readFile() {    
+  for (const file of soundInput.files) {
+      const reader = new FileReader();
+      reader.addEventListener("load", (e) => {
+          const audioData = e.target.result;
+
+          const promise = audioContext.decodeAudioData(audioData, 
+              function(buffer) {
+                for (let oscillator of oscillatorNodes) {
+                  oscillator.buffer = buffer;
+                  oscillator.loop = true;
+                }
+              });
+
+          promise
+              .then(() => {
+                  //source.start();
+              })
+              .catch((err) => {
+                  console.log(err);
+              });
+      });
+
+      reader.readAsArrayBuffer(file);
+  }
+}
+
+soundInput.addEventListener("change", readFile);
 
 // Add music options
 let optgroup = document.createElement("optgroup");
